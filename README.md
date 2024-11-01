@@ -98,6 +98,14 @@ To stop the application, run:
 docker-compose down
 ```
 
+## Architecture flow
+
+- entrypoint.sh loop timer
+- reads sourceid from .env and makes a query to the sources table in the db
+- uses url from sources row to call out to rss feed
+- saves to collected_artefacts table in postgress
+- creates an entry in collected_artefacts_rss_pre_scrape kafka topic
+
 ## Notes
 
 - Logs are written to `/application.log` inside the container.

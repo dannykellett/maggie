@@ -128,7 +128,7 @@ def main():
                     "created": datetime.now(timezone.utc).isoformat(),
                     "articleelement": source.articleelement  # Adding the new articleelement field
                 }
-                post_to_kafka("collected_artefacts", uid, artefact_message)
+                post_to_kafka("collected_artefacts_rss_pre_scrape", uid, artefact_message)
                 logger.info("Kafka message sent to 'collected_artefacts' with key '{}': {}", uid, artefact_message)
 
             except IntegrityError:
