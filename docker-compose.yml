@@ -1,0 +1,12 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    container_name: maggie
+    env_file:
+      - .env
+    volumes:
+      - .:/app
+    # No additional command or entrypoint here, as we rely on the Dockerfile CMD
+    # restart: always  # Keep container running even after a restart

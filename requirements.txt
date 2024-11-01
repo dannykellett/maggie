@@ -1,0 +1,6 @@
+loguru
+sqlalchemy
+python-dotenv
+psycopg2-binary
+feedparser
+confluent_kafka
