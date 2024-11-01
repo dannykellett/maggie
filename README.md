@@ -13,7 +13,7 @@ This project runs a Python application in a Docker container that executes every
 1. **Clone the repository:**
 
    ```bash
-   git clone https://github.com/yourusername/project-folder.git
+   git clone https://github.com/dannykellett/maggie.git
    cd project-folder
    ```
 
