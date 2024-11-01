@@ -127,6 +127,7 @@ def main():
                 # Prepare and send a Kafka message for the collected_artefact entry
                 artefact_message = {
                     "artefactid": uid,
+                    "sourcetype": source.sourcetype,
                     "description": artefact_description,
                     "sourceid": source.sourceid,
                     "locator": entry.link,
