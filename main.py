@@ -31,6 +31,7 @@ SessionLocal = sessionmaker(bind=engine)
 # Define SQLAlchemy models
 Base = declarative_base()
 
+
 class Source(Base):
     __tablename__ = 'sources'
 
@@ -45,6 +46,7 @@ class Source(Base):
     numprocessed = Column(Integer, default=0)
     articleelement = Column(JSON)  # New JSON column for articleelement
 
+
 class CollectedArtefact(Base):
     __tablename__ = 'collected_artefacts'
 
@@ -53,12 +55,16 @@ class CollectedArtefact(Base):
     sourceid = Column(String, nullable=False)  # Foreign key reference to Source
     locator = Column(Text, nullable=False)  # Stores the RSS entry link
     created = Column(DateTime, default=datetime.now(timezone.utc))
+    descriptionlang = Column(String, nullable=True)
+    rawcontentlang = Column(String, nullable=True)
+
 
 # Setup Kafka Producer
 kafka_producer = Producer({'bootstrap.servers': KAFKA_BOOTSTRAP_SERVERS})
 
 # Log configuration
 logger.add("application.log", rotation="500 MB")
+
 
 # Function to connect to the database and retrieve the source entry
 def get_source_by_id(session, source_id):
@@ -72,15 +78,18 @@ def get_source_by_id(session, source_id):
         logger.error("Multiple sources found with sourceid: {}", source_id)
         exit(1)
 
+
 # Function to create a unique UUID based on RSS feed entry details
 def create_unique_uid(title, link, description, pubDate):
     unique_str = f"{title}-{link}-{description}-{pubDate}"
     return str(uuid5(NAMESPACE_DNS, unique_str))
 
+
 # Function to post to Kafka topic with JSON message
 def post_to_kafka(topic, key, message):
     kafka_producer.produce(topic, key=key, value=json.dumps(message))
     kafka_producer.flush()
+
 
 # Main application logic
 def main():
@@ -105,12 +114,14 @@ def main():
         for entry in feed.entries:
             uid = create_unique_uid(entry.title, entry.link, entry.description, entry.published)
             artefact_description = f"{source.sourcetype} from {source.sourcename} - {entry.title}"
+            lang = detect_language_with_langdetect(entry.description)
 
             artefact = CollectedArtefact(
                 artefactid=uid,
                 description=artefact_description,
                 sourceid=source.sourceid,
-                locator=entry.link
+                locator=entry.link,
+                descriptionlang=lang[0]
             )
 
             try:
@@ -126,7 +137,8 @@ def main():
                     "sourceid": source.sourceid,
                     "locator": entry.link,
                     "created": datetime.now(timezone.utc).isoformat(),
-                    "articleelement": source.articleelement  # Adding the new articleelement field
+                    "articleelement": source.articleelement,
+                    "descriptionlang": lang[0]
                 }
                 post_to_kafka("collected_artefacts_rss_pre_scrape", uid, artefact_message)
                 logger.info("Kafka message sent to 'collected_artefacts' with key '{}': {}", uid, artefact_message)
@@ -174,6 +186,18 @@ def main():
         logger.info("Kafka message sent to 'sources' with key '{}': {}", kafka_key, kafka_message)
 
     logger.info("Application run complete.")
+
+
+def detect_language_with_langdetect(line):
+    from langdetect import detect_langs
+    try:
+        langs = detect_langs(line)
+        for item in langs:
+            # The first one returned is usually the one that has the highest probability
+            return item.lang, item.prob
+    except:
+        return "err", 0.0
+
 
 if __name__ == "__main__":
     main()
