@@ -113,6 +113,17 @@ def main():
         duplicates = []
         for entry in feed.entries:
             uid = create_unique_uid(entry.title, entry.link, entry.description, entry.published)
+
+            # Check if the uid already exists in collected_artefacts for this sourceid
+            existing_artefact = session.query(CollectedArtefact).filter_by(artefactid=uid,
+                                                                           sourceid=source.sourceid).first()
+            if existing_artefact:
+                logger.warning(
+                    "Artefact with uid {} and sourceid {} already exists. Skipping this entry.",
+                    uid, source.sourceid
+                )
+                continue  # Skip to the next entry if the artefact already exists
+
             artefact_description = f"{source.sourcetype} from {source.sourcename} - {entry.title}"
             lang = detect_language_with_langdetect(entry.description)
 
